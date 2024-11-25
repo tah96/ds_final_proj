@@ -9,7 +9,7 @@ editor: visual
 The purpose of this document is to showcase our exploratory data analysis surrounding factors that may contribute to diabetes (or lack thereof). Our data comes from Behavioral Risk Factor Surveillance System dataset on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
 
 We aim to predict diabetes based on these variables and understand our most important/impactful variables.
- 
+
 ## Libraries & Reading Data
 
 Below we will read in our libraries and our diabetes data set. As we can see in the output, some of our "numeric" variables shouldn't be numeric as they are categorical variables.
@@ -20,6 +20,7 @@ library(tidyverse)
 raw_data <- read_csv(file='diabetes_data.csv',show_col_types=FALSE)
 head(raw_data)
 ```
+
 ## Data Cleaning
 
 As stated, a lot of our data is labeled as a numeric type but should be categorical. Lets change all those for factors, and for everything that is not binary we will provide labels explicitly.
@@ -57,4 +58,69 @@ Now that we've converted some things to factors, lets check for nulls (NA). Ther
 ```{r}
 colSums(is.na(data))
 ```
+
+## Data Summaries
+
+Exploring our data is important. In this section, we'll take a look at our categorical and numeric variables and trends with respect to our outcome (presence of diabetes). This will include tables and plots.
+
+### Categorical
+
+Starting with some contingency tables, lets look at two-way contingency tables. Based on what I know, I think that our `Age` variable (age brackets), `HighBP` (high blood pressure), and `Highhol` (high cholesterol) may provide some insights.
+
+From the below outputs we see that
+
+1.  It is difficult to observe trends in Age bracket and the presence of Diabetes, but we can roughly tell the distribution of our Age brackets. We'll explore this further in graphs.
+2.  The majority of those that have diabetes have High Blood Pressure
+3.  The majority of those that have diabetes have High Cholesterol
+4.  At surface level, Sex seems to be of equal sample proportions for those with and without diabetes
+
+```{r}
+data %>%
+  group_by(Age,Diabetes_binary) %>%
+  summarize(count = n())
+
+data %>%
+  group_by(Diabetes_binary,HighBP) %>%
+  summarize(count = n())
+
+data %>%
+  group_by(Diabetes_binary,HighChol) %>%
+  summarize(count = n())
+
+data %>%
+  group_by(Diabetes_binary,Sex) %>%
+  summarize(count = n())
+
+```
+
+Now for some three-way contingency tables. From the above, we saw that people with diabetes exhibited High Blood Pressure OR High Cholesterol. We want to see if that can also be an AND statement. Furthermore, I'm curious on if being a smoker and an assessment of general health has an impact.
+
+From the below outputs we observe...
+
+1.  High Cholesterol AND High Blood Pressure is often seen in those with diabetes
+2.  Those without diabetes exhibit `Very Good` general health (mode) with perhaps a slight penalty for being a smoker.
+3.  Those with diabetes seem to have slightly lower general health of `Good` with a slight shift in distribution towards `Fair` if they smoke
+
+```{r}
+data %>%
+  group_by(Diabetes_binary,HighChol,HighBP) %>%
+  summarize(count = n())
+
+data %>%
+  group_by(Diabetes_binary,Smoker,GenHlth) %>%
+  summarize(count = n())
+```
+Now for some graphs! To start out, we made a statement earlier that it was difficult to infer anything from our Age and Diabetes contingency table earlier. Lets visualize this graphically. We see in the below that our distribution is left skewed for our respondents and it seems that there is little to know impact of age on the precense of diabetes.
+
+```{r}
+ggplot(data %>% 
+         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+       aes(x=Age,fill=Diabetes_binary)
+       ) +
+  geom_bar() +
+  scale_fill_discrete("Diabetes") +
+  labs(y = 'Frequency',title='Age Distribution colored by Diabetes')
+  
+```
+Placeholder for more graphs!
 
