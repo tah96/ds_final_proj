@@ -110,6 +110,7 @@ data %>%
   group_by(Diabetes_binary,Smoker,GenHlth) %>%
   summarize(count = n())
 ```
+
 Now for some graphs! To start out, we made a statement earlier that it was difficult to infer anything from our Age and Diabetes contingency table earlier. Lets visualize this graphically. We see in the below that our distribution is left skewed for our respondents and it seems that there is little to know impact of age on the precense of diabetes.
 
 ```{r}
@@ -122,5 +123,149 @@ ggplot(data %>%
   labs(y = 'Frequency',title='Age Distribution colored by Diabetes')
   
 ```
-Placeholder for more graphs!
 
+Similar to Age, lets create similar bar graphs for levels of income and education. It is our hypothesis that there is no connection or obvious patterns here. Lets see what it looks like at first glance
+
+Our hypothesis appears correct.
+
+```{r}
+ggplot(data %>% 
+         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+       aes(x=Income,fill=Diabetes_binary)
+       ) +
+  geom_bar() +
+  scale_fill_discrete("Diabetes") +
+  labs(y = 'Frequency',title='Income Distribution colored by Diabetes')
+
+ggplot(data %>% 
+         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+       aes(x=Education,fill=Diabetes_binary)
+       ) +
+  geom_bar() +
+  scale_fill_discrete("Diabetes") +
+  labs(y = 'Frequency',title='Income Distribution colored by Diabetes')
+```
+
+Maybe we can find some patterns using faceting. Lets build a series of bar graphs with `GenHealth` on our X-Axis colored by the presence of diabetes. Lets facet this by our age brackets to see if there's a pattern.
+
+The output isn't super friendly, but because we know our General Health is a factor type the axis goes from left-to-right in the following order: `Excellent`,`Very Good`,`Good`,`Fair`,`Poor`
+
+Looking at General Health alone, it seems there's a slight right skew that becomes more normal with age. Its difficult to tell, but there may be some suggestion that your general health leads to an increased risk of diabetes due to the eye-level proportions.
+
+```{r}
+ggplot(data %>% 
+         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+       aes(x=GenHlth,fill=Diabetes_binary)
+       ) +
+  geom_bar() +
+  scale_fill_discrete("Diabetes") +
+  labs(x='General Health',y = 'Frequency',title='General Health by Age Bracket') +
+  facet_wrap(~Age)
+
+
+```
+
+### Numeric
+
+We have a lot less numeric variables here to analyze, but there still may be some important details in our summaries. Lets look at our distributions and measures of spread and central tendency.
+
+For starters, lets look at standalone variables. Lets look at some stats for `BMI`,`MentHlth`,`PhysHlth`.
+
+Below are some observations:
+
+1.  Our mean and median BMI values are between 27-29 with a standard deviation of 6. With a slight left skew, both values fall into the "Overweight" category.
+2.  The median number of days (over past 30 days) our participants expressed having some mental health problems is 0. This is a bit odd and may showcase some bias in how our participants evaluate themselves.
+3.  Yikes! The median number of days (over past 30 days) our participants expressed participating in physical activities is also 0! Not a very active bunch!
+
+```{r}
+data %>%
+  summarize("mean" = mean(BMI),
+            "median" = median(BMI),
+            "var" = var(BMI),
+            "sd" = sd(BMI),
+            "IQR" = IQR(BMI)
+            )
+
+data %>%
+  summarize("mean" = mean(MentHlth),
+            "median" = median(MentHlth),
+            "var" = var(MentHlth),
+            "sd" = sd(MentHlth),
+            "IQR" = IQR(MentHlth)
+            )
+
+data %>%
+  summarize("mean" = mean(PhysHlth),
+            "median" = median(PhysHlth),
+            "var" = var(PhysHlth),
+            "sd" = sd(PhysHlth),
+            "IQR" = IQR(PhysHlth)
+            )
+
+```
+
+Lets go a step beyond one-variable summaries here. Mental Health and Physical Health seem that they may have their own problems. Fortunately for us, we have a BMI number. We would expect our measures of central tendency to be higher, on average, for those with diabetes.
+
+Our hypothesis seems correct at first glance with our median BMI being 27 (Overweight) for those without diabetes and 31 (Obese) for those with diabetes. We'll explore this more in our graphs.
+
+```{r}
+data %>%
+  select(Diabetes_binary,BMI) %>%
+  group_by(Diabetes_binary) %>%
+  summarize(across(everything(), .fns = list("mean" = mean,
+                                       "median" = median,
+                                       "var" = var,
+                                       "sd" = sd,
+                                       "IQR" = IQR), .names = "{.fn}_{.col}"))
+```
+
+Lets graph out the above relationship on a density chart. We can certainly see a shift to the right (higher BMI) for those with diabetes.
+
+```{r}
+bmi_plot <- ggplot(data %>% 
+         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes')),
+                HighChol = factor(HighChol,levels=c(0,1),labels=c('Low/Average Cholesterol','High Cholesterol')),
+                HighBP = factor(HighBP,levels=c(0,1),labels=c('Low/Average Blood Pressure','High Blood Pressure'))
+                ),
+       aes(x=BMI,fill=Diabetes_binary)
+       ) +
+  geom_density(alpha=0.5,kernel="gaussian") +
+  scale_fill_discrete("Diabetes") +
+  labs(x='BMI',y='Frequency')
+
+bmi_plot +
+  labs(title='BMI')
+```
+
+It would be interesting to see this faceted across our categorical `HighChol` and `HighBp` measures. We would expect to see some patterns.
+
+It is difficult to tell in the graphs, but the graphs look similar across low and high levels of each categorical. There may be a slight shift to the right (BMI) in measures of central tendency across high levels of each categorical. We'll uncover more on the impact of this in our modeling!
+
+```{r}
+bmi_plot +
+  labs(title = 'BMI Distribution Across Generic Cholesterol Levels') +
+  facet_wrap(~HighChol)
+
+bmi_plot +
+  labs(title = 'BMI Distribution Across Generic Blood Pressure Levels') +
+  facet_wrap(~HighBP)
+```
+
+From our previous analyses, I hypothesize that mental health and physical health have little to no influence, and its hard to think a box plot or violin plot will provide much information.
+
+What about our correlation between our numeric variables.? It seems BMI and our numeric health metrics have little correlation, but we see low-to-moderate positive correlation between `MentHlth` and `PhysHlth`.
+
+```{r}
+correlations <- summary(correlation::correlation(data %>% select(BMI, MentHlth, PhysHlth)))
+
+plot(correlations, show_data = "points")
+```
+
+## Summary
+
+That concludes our exploratory data analysis. We've seen a lot of interesting trends or absence of trends. Generally, here are some highlights:
+
+1.  BMI seems to be higher for those with diabetes
+2.  Mental Health and Physical Health measures seem to have some correlation, but none that seem to impact BMI or classification of someone having diabetes.
+3.  General Health may have some impact on developing diabetes.
+4.  High Blood Pressure and/or High Cholesterol are relatively more common in those with diabetes than those without.
