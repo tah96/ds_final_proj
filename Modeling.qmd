@@ -4,4 +4,152 @@ format: html
 editor: visual
 ---
 
-## Placeholder
+## Introduction
+
+The purpose of this document is to showcase our exploration of models for classifying people as diabetic based on a variety of factors.Our data comes from Behavioral Risk Factor Surveillance System dataset on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
+
+We aim to correctly classify individuals as diabetic (or not) based on these variables and understand our most important/impactful variables. We will review a series of models and pick our best one!
+
+## Libraries & Reading Data
+
+Below we will read in our libraries and our diabetes data set. As we can see in the output, some of our "numeric" variables shouldn't be numeric as they are categorical variables.
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(rpart)
+
+raw_data <- read_csv(file='diabetes_data.csv',show_col_types=FALSE)
+head(raw_data)
+```
+
+## Data Cleaning
+
+As stated, a lot of our data is labeled as a numeric type but should be categorical. Lets change all those for factors, and for everything that is not binary we will provide labels explicitly.
+
+```{r}
+data <- raw_data %>%
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         CholCheck = as.factor(CholCheck),
+         Smoker = as.factor(Smoker),
+         Stroke = as.factor(Stroke),
+         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
+         AnyHealthcare = as.factor(AnyHealthcare),
+         NoDocbcCost = as.factor(NoDocbcCost),
+         GenHlth = factor(GenHlth,levels=seq(1:5),labels=c('Excellent','Very Good','Good','Fair','Poor')),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = factor(Age,levels=seq(1:13),labels=c('18-24','25-29','30-34','35-39','40-44','45-49'
+                                            ,'50-54','55-59','60-64','65-69','70-74','75-79','80+')
+          ),
+         Education = factor(Education,levels=seq(1:6),labels=c('Never attended school or only kindergarten','Grades 1-8','Grades 9-11','Grade 12 or GED','College 1-3 years','College 4+ years')),
+         Income = factor(Income,levels=seq(1:8),labels=c('<$10k','<$15k','<$20k','<$25k','<$35k','<$50k','<$75k','$75k+'))
+    )
+
+head(data)
+```
+
+## Training, Test and Folds
+
+We want to split our data into a 70% training and 30% test set. For fitting our models, we also want 5 folds from our training set for cross-validation.
+
+We'll set a seed as well to make sure our results, and comments about those results, are reproducible.
+
+The below output is of our split showing \~178k records ino ur training set and \~76k records in our test set.
+
+```{r}
+set.seed(123)
+data_split <- initial_split(data,prop=0.70)
+data_train <- training(data_split)
+data_test <- testing(data_split)
+data_folds <- vfold_cv(data_train,5)
+
+data_split
+```
+
+## Models
+
+This section will hold our models along with explanations of what each one is
+
+### Classification Tree
+
+A classification tree is a tree-based model aimed at placing subjects (classifying) into a single category (outcome) based on what we know about them (inputs).
+
+The tree starts with a node and uses a log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler.
+
+**Recipe**
+
+First we'll construct our recipe. For this we'll concentrate on the variables `BMI`,`HighBP`,`HighChol`,`GenHlth`,`Sex`,`Smoker`,`Stroke`,`HvyAlcoholConsump`.
+
+We'll normalize our one numeric variables `BMI`. We'll also add dummy variables for our one factor variable with multiple levels `GenHlth`. There is no need to update anything to an ID type because that does not exist in the data set.
+
+```{r}
+class_recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smoker + Stroke + HvyAlcoholConsump
+                         , data = data_train) |>
+  step_normalize(BMI) |>
+  step_dummy(GenHlth)
+
+class_recipe
+```
+**Model & Engine**
+
+Now to set up our model and engine. We know that this is a tree model and we want to tune on our `cost_complexity` parameter. Its important we set our mode to classification here, since we are predicting a classification!
+
+```{r}
+class_mod <- decision_tree(tree_depth = 5,
+                          min_n = 5,
+                          cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+
+class_mod
+```
+**Workflow**
+
+Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and limit the tuning of our cost complexity hyperparemeter to 15 levels.
+
+```{r}
+class_wfl <- workflow() |>
+  add_recipe(class_recipe) |>
+  add_model(class_mod)
+
+class_fits <- class_wfl |> 
+  tune_grid(resamples = data_folds,
+            grid = grid_regular(cost_complexity(),
+                                levels = 15),
+            metrics = metric_set(mn_log_loss)
+            )
+
+class_fits |>
+  collect_metrics()
+```
+We'll use our the value for `cost_complexity` that led to the lowest `mn_log_loss` value. We'll use this to finalize our workflow.
+
+With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
+
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.358`.
+
+```{r}
+class_best_params <- select_best(class_fits, metric = "mn_log_loss")
+
+class_final_wfl <- class_wfl |>
+  finalize_workflow(class_best_params)
+
+class_final_fit <- class_final_wfl |>
+  last_fit(data_split,metrics=metric_set(mn_log_loss))
+
+class_test_metrics <- class_final_fit |>
+  collect_metrics()
+
+class_test_metrics
+```
+
+### Random Forest
+
+Placeholder
