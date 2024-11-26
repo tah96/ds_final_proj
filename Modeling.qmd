@@ -6,7 +6,7 @@ editor: visual
 
 ## Introduction
 
-The purpose of this document is to showcase our exploration of models for classifying people as diabetic based on a variety of factors.Our data comes from Behavioral Risk Factor Surveillance System dataset on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
+The purpose of this document is to showcase our exploration of models for classifying people as diabetic based on a variety of factors.Our data comes from Behavioral Risk Factor Surveillance System data set on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
 
 We aim to correctly classify individuals as diabetic (or not) based on these variables and understand our most important/impactful variables. We will review a series of models and pick our best one!
 
@@ -18,6 +18,8 @@ Below we will read in our libraries and our diabetes data set. As we can see in 
 library(tidyverse)
 library(tidymodels)
 library(rpart)
+library(ranger)
+library(vip)
 
 raw_data <- read_csv(file='diabetes_data.csv',show_col_types=FALSE)
 head(raw_data)
@@ -97,6 +99,7 @@ class_recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex
 
 class_recipe
 ```
+
 **Model & Engine**
 
 Now to set up our model and engine. We know that this is a tree model and we want to tune on our `cost_complexity` parameter. Its important we set our mode to classification here, since we are predicting a classification!
@@ -110,7 +113,8 @@ class_mod <- decision_tree(tree_depth = 5,
 
 class_mod
 ```
-**Workflow**
+
+**Workflow & First-Fit**
 
 Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and limit the tuning of our cost complexity hyperparemeter to 15 levels.
 
@@ -129,6 +133,9 @@ class_fits <- class_wfl |>
 class_fits |>
   collect_metrics()
 ```
+
+**Test Measure**
+
 We'll use our the value for `cost_complexity` that led to the lowest `mn_log_loss` value. We'll use this to finalize our workflow.
 
 With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
@@ -152,4 +159,71 @@ class_test_metrics
 
 ### Random Forest
 
+The second model we'll look at is a random forest model. A random forest model is also a tree-fit model. A random forest model creates a series of tree's using a random set of predictors on each fold in our cross validation set.
+
+Lets say one on our our folds our random forest produces 200 tree models. Each may have different predictors at each split of the tree. The average CV error will be taken.
+
+Compared to a basic classification tree, not all predictors are considered and a random forest is an ensemble method. As a result of not using all predictors, we are careful to reduce risk of over fitting to our training set.
+
+**Recipe & Model**
+
+We'll use the same recipe and set of predictors per our classification model. Our model will again be set as a classification model. Unlike our basic classification model, we will tune on our `mtry` hyperparameter.
+
+```{r}
+rf_model <- rand_forest(mtry = tune()) |>
+  set_engine("ranger", importance = "impurity") |>
+  set_mode("classification")
+```
+
+**Workflow & First-Fit**
+
+Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and fit a model.
+
+```{r}
+rf_wfl <- workflow() |>
+  add_recipe(class_recipe) |>
+  add_model(rf_model)
+
+rf_fit <- rf_wfl |>
+  tune_grid(resamples = data_folds,
+            grid = 5,
+            metrics = metric_set(mn_log_loss))
+
+rf_fit |>
+  collect_metrics()
+```
+
+**Test Measure**
+
+We'll use our the value for `mtry` that led to the lowest `mn_log_loss` value. We'll use this to finalize our workflow.
+
+With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
+
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.358`.
+
+```{r}
+rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
+
+rf_final_wfl <- rf_wfl |>
+  finalize_workflow(rf_best_params)
+
+rf_final_fit <- rf_final_wfl |>
+  last_fit(data_split,metrics=metric_set(mn_log_loss))
+
+rf_test_metrics <- rf_final_fit |>
+  collect_metrics()
+
+rf_test_metrics
+```
+
+
+## Selecting our model
+
+Which of our best models of each type performed the best? From the below, we can declare the ______ model as our winner!
+
+```{r}
+rbind(class_test_metrics,rf_test_metrics)
+```
+
+## Final Fit & Parameter estimates
 Placeholder
