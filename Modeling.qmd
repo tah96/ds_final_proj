@@ -67,6 +67,8 @@ The below output is of our split showing \~178k records ino ur training set and 
 
 ```{r}
 set.seed(123)
+
+data <- data[1:10000,]
 data_split <- initial_split(data,prop=0.70)
 data_train <- training(data_split)
 data_test <- testing(data_split)
@@ -216,14 +218,21 @@ rf_test_metrics <- rf_final_fit |>
 rf_test_metrics
 ```
 
-
 ## Selecting our model
 
-Which of our best models of each type performed the best? From the below, we can declare the ______ model as our winner!
+Which of our best models of each type performed the best? From the below, we can declare the **random forest** model as our winner!
 
 ```{r}
 rbind(class_test_metrics,rf_test_metrics)
 ```
 
 ## Final Fit & Parameter estimates
-Placeholder
+
+Finally, we'll fit our model to the whole dataset
+
+```{r}
+rf_extract_fit <- rf_final_wfl |>
+  fit(data) |>
+  extract_fit_engine()
+```
+
