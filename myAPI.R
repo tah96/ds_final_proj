@@ -7,6 +7,7 @@ raw_data <- read_csv(file='diabetes_data.csv',show_col_types=FALSE)
 data <- raw_data %>%
   select(Diabetes_binary,BMI,HighBP,HighChol,Smoker,Stroke,HvyAlcoholConsump,GenHlth,Sex) %>%
   mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         BMI = as.double(BMI),
          HighBP = as.factor(HighBP),
          HighChol = as.factor(HighChol),
          Smoker = as.factor(Smoker),
@@ -31,8 +32,8 @@ getMode <- function(column_name){
 }
 
 defaults <- lapply(cat_cols,FUN=getMode)
-defaults$BMI <- mean(data$BMI)
-names(defaults) <- c(cat_cols,"BMI")
+#defaults$BMI <- mean(data$BMI)
+#names(defaults) <- c(cat_cols,"BMI")
 
 ## Model
 
@@ -72,15 +73,19 @@ rf_final_model <- rf_final_wfl |>
 
 rf_final_model |>
   predict(data.frame(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"))
-  
-#query with http://localhost:PORT/ln?num=1
 
 #* Find multiple of two numbers
-#* param num1 1st number
-#* param num2 2nd number
-#* get /pred
-test <- function(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"){
-  df <- data.frame(BMI=BMI,
+#* @param BMI Body Mass Index
+#* @param HighBP High Blood Pressure flag
+#* @param HighChol High Cholesterol flag
+#* @param Smoker Smoker flag
+#* @param Stroke Stroke flag
+#* @param HvyAlcoholConsump Heavy Alcohol Consumption flag
+#* @param GenHlth General Health Category
+#* @param Sex Sex flag
+#* @get /pred
+function(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"){
+  df <- data.frame(BMI=as.double(BMI),
              HighBP=HighBP,
              HighChol=HighChol,
              Smoker=Smoker,
@@ -96,4 +101,21 @@ test <- function(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcohol
     print("Not Diabetic")
   }
 }
+
+#http://127.0.0.1:4829/pred?BMI=40&HighBP=1&HighChol=1&Smoker=0&Stroke=0&HvyAlcoholConsump=0&GenHlth=Good&Sex=1
+#http://127.0.0.1:4829/pred?BMI=19&HighBP=1&HighChol=1&Smoker=1&Stroke=1&HvyAlcoholConsump=1&GenHlth=Fair&Sex=0
+#http://127.0.0.1:4829/pred?HighBP=1&HighChol=1
+
+
+#* Retrieve information about the author and github pages
+#* @get /info
+function(){
+  info <- list(author="Tyler Hunt",url='https://www.espn.com')
+  return(info)
+}
+
+
+
+
+
 
