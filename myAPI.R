@@ -67,10 +67,11 @@ rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
 rf_final_wfl <- rf_wfl |>
   finalize_workflow(rf_best_params)
 
-rf_extract_fit <- rf_final_wfl |>
-  fit(data) |>
-  extract_fit_engine()
+rf_final_model <- rf_final_wfl |>
+  fit(data)
 
+rf_final_model |>
+  predict(data.frame(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"))
   
 #query with http://localhost:PORT/ln?num=1
 
@@ -78,7 +79,21 @@ rf_extract_fit <- rf_final_wfl |>
 #* param num1 1st number
 #* param num2 2nd number
 #* get /pred
-function(num1, num2){
-  as.numeric(num1)*as.numeric(num2)
+test <- function(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"){
+  df <- data.frame(BMI=BMI,
+             HighBP=HighBP,
+             HighChol=HighChol,
+             Smoker=Smoker,
+             Stroke=Stroke,
+             HvyAlcoholConsump=HvyAlcoholConsump,
+             GenHlth=GenHlth,
+             Sex=Sex)
+  prediction <- rf_final_model |>
+    predict(df)
+  if(prediction$.pred_class==1){
+    print("Diabetes")
+  } else {
+    print("Not Diabetic")
+  }
 }
 
