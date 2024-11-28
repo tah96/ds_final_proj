@@ -2,6 +2,7 @@
 library(tidyverse)
 library(tidymodels)
 library(ranger)
+library(ggplot2)
 
 raw_data <- read_csv(file='diabetes_data.csv',show_col_types=FALSE)
 data <- raw_data %>%
@@ -74,6 +75,11 @@ rf_final_model <- rf_final_wfl |>
 rf_final_model |>
   predict(data.frame(BMI=40,HighBP="1",HighChol="1",Smoker="0",Stroke="0",HvyAlcoholConsump="0",GenHlth="Good",Sex="1"))
 
+matrix <- conf_mat(data |> 
+                    mutate(estimate = rf_final_model |> predict(data) |> pull()), #data
+                   Diabetes_binary, #truth
+                   estimate)
+
 #* Find multiple of two numbers
 #* @param BMI Body Mass Index
 #* @param HighBP High Blood Pressure flag
@@ -113,6 +119,19 @@ function(){
   info <- list(author="Tyler Hunt",url='https://www.espn.com')
   return(info)
 }
+
+#* Retrieve confusion matrix from the model
+#* @serializer png
+#* @get /confusion
+function(){
+  matrix <- conf_mat(data |> 
+                       mutate(estimate = rf_final_model |> predict(data) |> pull()), #data
+                     Diabetes_binary, #truth
+                     estimate)
+  plot <- ggplot2::autoplot(matrix,type="heatmap")
+  print(plot)
+}
+
 
 
 
