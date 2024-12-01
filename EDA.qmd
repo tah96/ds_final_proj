@@ -6,9 +6,22 @@ editor: visual
 
 ## Introduction
 
-The purpose of this document is to showcase our exploratory data analysis surrounding factors that may contribute to diabetes (or lack thereof). Our data comes from Behavioral Risk Factor Surveillance System dataset on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
+The purpose of this document is to showcase our exploration of models for classifying people as diabetic based on a variety of factors.Our data comes from Behavioral Risk Factor Surveillance System data set on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
 
-We aim to predict diabetes based on these variables and understand our most important/impactful variables.
+The purpose of our exploratory data analysis is to explore some possible connections with respect to our response variable (diabetes). We will not review all variables in this document. Those included in our analyses are:
+
+1.  HighBP (High Blood Pressure flag)
+2.  HighChol (High Cholesterol flag)
+3.  Age (Age Brackets)
+4.  GenHlth (General Health Category)
+5.  Sex (Female/Male)
+6.  PhysHlth (# days Physical exercise past 30 days)
+7.  MntlHlth
+8.  Education (Category of greatest education completed)
+9.  Income (Income bracket)
+10. Smoker (Smoker flag)
+
+We aim to correctly classify individuals as diabetic (or not) based on these variables and understand our most important/impactful variables. In real life, this could be used to predict diabetes or those at risk of developing diabetes. We will review a series of models and pick our best one!
 
 ## Libraries & Reading Data
 
@@ -27,22 +40,13 @@ As stated, a lot of our data is labeled as a numeric type but should be categori
 
 ```{r}
 data <- raw_data %>%
-  mutate(Diabetes_binary = as.factor(Diabetes_binary),
-         HighBP = as.factor(HighBP),
-         HighChol = as.factor(HighChol),
-         CholCheck = as.factor(CholCheck),
-         Smoker = as.factor(Smoker),
-         Stroke = as.factor(Stroke),
-         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
-         PhysActivity = as.factor(PhysActivity),
-         Fruits = as.factor(Fruits),
-         Veggies = as.factor(Veggies),
-         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
-         AnyHealthcare = as.factor(AnyHealthcare),
-         NoDocbcCost = as.factor(NoDocbcCost),
+  mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('Not Diabetic','Diabetic')),
+         HighBP = factor(HighBP,levels=c(0,1),labels=c('No High BP','High BP')),
+         HighChol = factor(HighChol,levels=c(0,1),labels=c('No High Cholesterol','High Cholesterol')),
+         Smoker = factor(Smoker,levels=c(0,1),labels=c('Not a Smoker','Smoker')),
          GenHlth = factor(GenHlth,levels=seq(1:5),labels=c('Excellent','Very Good','Good','Fair','Poor')),
-         DiffWalk = as.factor(DiffWalk),
-         Sex = as.factor(Sex),
+         #DiffWalk = as.factor(DiffWalk),
+         Sex = factor(Sex,levels=c(0,1),labels=c('Female','Male')),
          Age = factor(Age,levels=seq(1:13),labels=c('18-24','25-29','30-34','35-39','40-44','45-49'
                                             ,'50-54','55-59','60-64','65-69','70-74','75-79','80+')
           ),
@@ -61,7 +65,7 @@ colSums(is.na(data))
 
 ## Data Summaries
 
-Exploring our data is important. In this section, we'll take a look at our categorical and numeric variables and trends with respect to our outcome (presence of diabetes). This will include tables and plots.
+Exploring our data is important. In this section, we'll take a look at our categorical and numeric variables and trends with respect to our outcome (presence of diabetes). This will include tables and plots.Please note that not all variables are included in our preliminary analyses
 
 ### Categorical
 
@@ -114,8 +118,7 @@ data %>%
 Now for some graphs! To start out, we made a statement earlier that it was difficult to infer anything from our Age and Diabetes contingency table earlier. Lets visualize this graphically. We see in the below that our distribution is left skewed for our respondents and it seems that there is little to know impact of age on the precense of diabetes.
 
 ```{r}
-ggplot(data %>% 
-         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+ggplot(data,
        aes(x=Age,fill=Diabetes_binary)
        ) +
   geom_bar() +
@@ -129,21 +132,19 @@ Similar to Age, lets create similar bar graphs for levels of income and educatio
 Our hypothesis appears correct.
 
 ```{r}
-ggplot(data %>% 
-         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+ggplot(data,
        aes(x=Income,fill=Diabetes_binary)
        ) +
   geom_bar() +
   scale_fill_discrete("Diabetes") +
   labs(y = 'Frequency',title='Income Distribution colored by Diabetes')
 
-ggplot(data %>% 
-         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+ggplot(data,
        aes(x=Education,fill=Diabetes_binary)
        ) +
   geom_bar() +
   scale_fill_discrete("Diabetes") +
-  labs(y = 'Frequency',title='Income Distribution colored by Diabetes')
+  labs(y='Frequency',title='Income Distribution colored by Diabetes')
 ```
 
 Maybe we can find some patterns using faceting. Lets build a series of bar graphs with `GenHealth` on our X-Axis colored by the presence of diabetes. Lets facet this by our age brackets to see if there's a pattern.
@@ -153,16 +154,13 @@ The output isn't super friendly, but because we know our General Health is a fac
 Looking at General Health alone, it seems there's a slight right skew that becomes more normal with age. Its difficult to tell, but there may be some suggestion that your general health leads to an increased risk of diabetes due to the eye-level proportions.
 
 ```{r}
-ggplot(data %>% 
-         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes'))),
+ggplot(data,
        aes(x=GenHlth,fill=Diabetes_binary)
        ) +
   geom_bar() +
   scale_fill_discrete("Diabetes") +
   labs(x='General Health',y = 'Frequency',title='General Health by Age Bracket') +
   facet_wrap(~Age)
-
-
 ```
 
 ### Numeric
@@ -222,11 +220,7 @@ data %>%
 Lets graph out the above relationship on a density chart. We can certainly see a shift to the right (higher BMI) for those with diabetes.
 
 ```{r}
-bmi_plot <- ggplot(data %>% 
-         mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('No Diabetes','Has Diabetes')),
-                HighChol = factor(HighChol,levels=c(0,1),labels=c('Low/Average Cholesterol','High Cholesterol')),
-                HighBP = factor(HighBP,levels=c(0,1),labels=c('Low/Average Blood Pressure','High Blood Pressure'))
-                ),
+bmi_plot <- ggplot(data,
        aes(x=BMI,fill=Diabetes_binary)
        ) +
   geom_density(alpha=0.5,kernel="gaussian") +
@@ -269,3 +263,5 @@ That concludes our exploratory data analysis. We've seen a lot of interesting tr
 2.  Mental Health and Physical Health measures seem to have some correlation, but none that seem to impact BMI or classification of someone having diabetes.
 3.  General Health may have some impact on developing diabetes.
 4.  High Blood Pressure and/or High Cholesterol are relatively more common in those with diabetes than those without.
+
+To explore this further with modeling please see [Click here for the Modeling Page](Modeling.html)

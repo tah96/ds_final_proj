@@ -8,11 +8,11 @@ editor: visual
 
 The purpose of this document is to showcase our exploration of models for classifying people as diabetic based on a variety of factors.Our data comes from Behavioral Risk Factor Surveillance System data set on [Kaggle](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/) where the organization phoned over 400,000 individuals in 2015 asking about the presence of diabetes and other factors.
 
-We aim to correctly classify individuals as diabetic (or not) based on these variables and understand our most important/impactful variables. We will review a series of models and pick our best one!
+We aim to correctly classify individuals as diabetic (or not) based on these variables and understand our most important/impactful variables. In real life, this could be used to predict diabetes or those at risk of developing diabetes. We will review a series of models and pick our best one!
 
 ## Libraries & Reading Data
 
-Below we will read in our libraries and our diabetes data set. As we can see in the output, some of our "numeric" variables shouldn't be numeric as they are categorical variables.
+Below we will read in our libraries and our diabetes data set. As we can see in the output, some of our "numeric" variables shouldn't be numeric as they are categorical variables. If our categorical variables are binary, we will leave as is for easier modeling.
 
 ```{r}
 library(tidyverse)
@@ -31,22 +31,8 @@ As stated, a lot of our data is labeled as a numeric type but should be categori
 
 ```{r}
 data <- raw_data %>%
-  mutate(Diabetes_binary = as.factor(Diabetes_binary),
-         HighBP = as.factor(HighBP),
-         HighChol = as.factor(HighChol),
-         CholCheck = as.factor(CholCheck),
-         Smoker = as.factor(Smoker),
-         Stroke = as.factor(Stroke),
-         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
-         PhysActivity = as.factor(PhysActivity),
-         Fruits = as.factor(Fruits),
-         Veggies = as.factor(Veggies),
-         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
-         AnyHealthcare = as.factor(AnyHealthcare),
-         NoDocbcCost = as.factor(NoDocbcCost),
+  mutate(Diabetes_binary = factor(Diabetes_binary,levels=c(0,1),labels=c('Not Diabetic','Diabetic')),
          GenHlth = factor(GenHlth,levels=seq(1:5),labels=c('Excellent','Very Good','Good','Fair','Poor')),
-         DiffWalk = as.factor(DiffWalk),
-         Sex = as.factor(Sex),
          Age = factor(Age,levels=seq(1:13),labels=c('18-24','25-29','30-34','35-39','40-44','45-49'
                                             ,'50-54','55-59','60-64','65-69','70-74','75-79','80+')
           ),
@@ -68,7 +54,7 @@ The below output is of our split showing \~178k records ino ur training set and 
 ```{r}
 set.seed(123)
 
-data <- data[1:10000,]
+#data <- data[1:10000,]
 data_split <- initial_split(data,prop=0.70)
 data_train <- training(data_split)
 data_test <- testing(data_split)
@@ -79,13 +65,13 @@ data_split
 
 ## Models
 
-This section will hold our models along with explanations of what each one is
+This section will hold both models considered: A Classification Tree and a Random Forest. We will train and evaluate these models and declare our winner that we'll use in later parts of this project
 
 ### Classification Tree
 
 A classification tree is a tree-based model aimed at placing subjects (classifying) into a single category (outcome) based on what we know about them (inputs).
 
-The tree starts with a node and uses a log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler.
+The tree starts with a node and uses log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler. 
 
 **Recipe**
 
@@ -118,7 +104,7 @@ class_mod
 
 **Workflow & First-Fit**
 
-Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and limit the tuning of our cost complexity hyperparemeter to 15 levels.
+Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and limit the tuning of our cost complexity hyperparameter to 15 levels.
 
 ```{r}
 class_wfl <- workflow() |>
@@ -142,7 +128,7 @@ We'll use our the value for `cost_complexity` that led to the lowest `mn_log_los
 
 With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
 
-Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.358`.
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.355`.
 
 ```{r}
 class_best_params <- select_best(class_fits, metric = "mn_log_loss")
@@ -165,7 +151,7 @@ The second model we'll look at is a random forest model. A random forest model i
 
 Lets say one on our our folds our random forest produces 200 tree models. Each may have different predictors at each split of the tree. The average CV error will be taken.
 
-Compared to a basic classification tree, not all predictors are considered and a random forest is an ensemble method. As a result of not using all predictors, we are careful to reduce risk of over fitting to our training set.
+Compared to a basic classification tree, not all predictors are considered and a random forest is an ensemble method (many trees). As a result of not using all predictors, we are careful to reduce risk of over fitting to our training set.
 
 **Recipe & Model**
 
@@ -179,7 +165,9 @@ rf_model <- rand_forest(mtry = tune()) |>
 
 **Workflow & First-Fit**
 
-Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and fit a model.
+Lets put it all into a workflow and collect our metrics (log-loss). We'll tune our grid to our resamples on our cross-validation folds and fit a model. Since we're using the same predictors and outcome, we'll reuse or recipe from prior steps.
+
+It looks like the best value for our `mtry` hyperparameter is 4.
 
 ```{r}
 rf_wfl <- workflow() |>
@@ -197,11 +185,11 @@ rf_fit |>
 
 **Test Measure**
 
-We'll use our the value for `mtry` that led to the lowest `mn_log_loss` value. We'll use this to finalize our workflow.
+We'll use our value for `mtry` that led to the lowest `mn_log_loss` value. We'll use this to finalize our workflow.
 
 With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
 
-Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.358`.
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.323`.
 
 ```{r}
 rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
@@ -228,11 +216,19 @@ rbind(class_test_metrics,rf_test_metrics)
 
 ## Final Fit & Parameter estimates
 
-Finally, we'll fit our model to the whole dataset
+Finally, we'll fit our model to the whole dataset. For fun, we'll plot our variable importances.
+
+We see High Blood Pressure and High Cholesterol have great importance! General Health categories also have some notable importance.
 
 ```{r}
 rf_extract_fit <- rf_final_wfl |>
   fit(data) |>
   extract_fit_engine()
-```
 
+rf_extract_fit |>
+  vip::vi() |>
+  arrange(Importance) |>
+  ggplot(aes(x = Variable, y = Importance)) +
+  geom_bar(stat ="identity") +
+  coord_flip()
+```
