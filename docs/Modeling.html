@@ -161,7 +161,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✖ dplyr::lag()      masks stats::lag()
 ✖ yardstick::spec() masks readr::spec()
 ✖ recipes::step()   masks stats::step()
-• Search for functions across packages at https://www.tidymodels.org/find/</code></pre>
+• Learn how to get started at https://www.tidymodels.org/start/</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -237,7 +237,7 @@ The following object is masked from 'package:utils':
 <h2 class="anchored" data-anchor-id="training-test-and-folds">Training, Test and Folds</h2>
 <p>We want to split our data into a 70% training and 30% test set. For fitting our models, we also want 5 folds from our training set for cross-validation.</p>
 <p>We’ll set a seed as well to make sure our results, and comments about those results, are reproducible.</p>
-<p>The below output is of our split showing ~178k records ino ur training set and ~76k records in our test set.</p>
+<p>The below output is of our split showing ~178k records into our training set and ~76k records in our test set.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -262,10 +262,10 @@ The following object is masked from 'package:utils':
 <p>A classification tree is a tree-based model aimed at placing subjects (classifying) into a single category (outcome) based on what we know about them (inputs).</p>
 <p>The tree starts with a node and uses log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler.</p>
 <p><strong>Recipe</strong></p>
-<p>First we’ll construct our recipe. For this we’ll concentrate on the variables <code>BMI</code>,<code>HighBP</code>,<code>HighChol</code>,<code>GenHlth</code>,<code>Sex</code>,<code>Smoker</code>,<code>Stroke</code>,<code>HvyAlcoholConsump</code>.</p>
-<p>We’ll normalize our one numeric variables <code>BMI</code>. We’ll also add dummy variables for our one factor variable with multiple levels <code>GenHlth</code>. There is no need to update anything to an ID type because that does not exist in the data set.</p>
+<p>First we’ll construct our recipe. For this we’ll concentrate on the variables <code>BMI</code>,<code>HighBP</code>,<code>HighChol</code>,<code>GenHlth</code>,<code>Sex</code>,<code>Smoker</code>,<code>Stroke</code>,<code>HvyAlcoholConsump</code>,<code>DiffWalk</code>,<code>HeartDiseaseorAttack</code>.</p>
+<p>We’ll normalize our one numeric variable <code>BMI</code>. We’ll also add dummy variables for our one factor variable with multiple levels <code>GenHlth</code>. There is no need to update anything to an ID type because that does not exist in the data set.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>class_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(Diabetes_binary <span class="sc">~</span> BMI <span class="sc">+</span> HighBP <span class="sc">+</span> HighChol <span class="sc">+</span> GenHlth <span class="sc">+</span> Sex <span class="sc">+</span> Smoker <span class="sc">+</span> Stroke <span class="sc">+</span> HvyAlcoholConsump</span>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>class_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(Diabetes_binary <span class="sc">~</span> BMI <span class="sc">+</span> HighBP <span class="sc">+</span> HighChol <span class="sc">+</span> GenHlth <span class="sc">+</span> Sex <span class="sc">+</span> Smoker <span class="sc">+</span> Stroke <span class="sc">+</span> HvyAlcoholConsump <span class="sc">+</span> DiffWalk <span class="sc">+</span> HeartDiseaseorAttack</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                         , <span class="at">data =</span> data_train) <span class="sc">|&gt;</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(BMI) <span class="sc">|&gt;</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(GenHlth)</span>
@@ -287,8 +287,8 @@ The following object is masked from 'package:utils':
 <pre><code>Number of variables by role</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>outcome:   1
-predictor: 8</code></pre>
+<pre><code>outcome:    1
+predictor: 10</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code></code></pre>
@@ -344,18 +344,18 @@ Computational engine: rpart </code></pre>
 <pre><code># A tibble: 15 × 7
    cost_complexity .metric     .estimator  mean     n  std_err .config          
              &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;            
- 1        1   e-10 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 2        4.39e-10 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 3        1.93e- 9 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 4        8.48e- 9 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 5        3.73e- 8 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 6        1.64e- 7 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 7        7.20e- 7 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 8        3.16e- 6 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
- 9        1.39e- 5 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
-10        6.11e- 5 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
-11        2.68e- 4 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
-12        1.18e- 3 mn_log_loss binary     0.357     5 0.000831 Preprocessor1_Mo…
+ 1        1   e-10 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 2        4.39e-10 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 3        1.93e- 9 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 4        8.48e- 9 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 5        3.73e- 8 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 6        1.64e- 7 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 7        7.20e- 7 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 8        3.16e- 6 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+ 9        1.39e- 5 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+10        6.11e- 5 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+11        2.68e- 4 mn_log_loss binary     0.357     5 0.000816 Preprocessor1_Mo…
+12        1.18e- 3 mn_log_loss binary     0.357     5 0.000842 Preprocessor1_Mo…
 13        5.18e- 3 mn_log_loss binary     0.403     5 0.000693 Preprocessor1_Mo…
 14        2.28e- 2 mn_log_loss binary     0.403     5 0.000693 Preprocessor1_Mo…
 15        1   e- 1 mn_log_loss binary     0.403     5 0.000693 Preprocessor1_Mo…</code></pre>
@@ -364,7 +364,7 @@ Computational engine: rpart </code></pre>
 <p><strong>Test Measure</strong></p>
 <p>We’ll use our the value for <code>cost_complexity</code> that led to the lowest <code>mn_log_loss</code> value. We’ll use this to finalize our workflow.</p>
 <p>With this finalized workflow, we’ll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.</p>
-<p>Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at <code>0.355</code>.</p>
+<p>Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at <code>0.356</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>class_best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(class_fits, <span class="at">metric =</span> <span class="st">"mn_log_loss"</span>)</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -382,7 +382,7 @@ Computational engine: rpart </code></pre>
 <pre><code># A tibble: 1 × 4
   .metric     .estimator .estimate .config             
   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-1 mn_log_loss binary         0.358 Preprocessor1_Model1</code></pre>
+1 mn_log_loss binary         0.359 Preprocessor1_Model1</code></pre>
 </div>
 </div>
 </section>
@@ -416,19 +416,20 @@ Computational engine: rpart </code></pre>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="sc">|&gt;</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 7
+<pre><code># A tibble: 5 × 7
    mtry .metric     .estimator  mean     n  std_err .config             
   &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;               
-1     5 mn_log_loss binary     0.325     5 0.00131  Preprocessor1_Model1
-2     8 mn_log_loss binary     0.332     5 0.00145  Preprocessor1_Model2
-3     2 mn_log_loss binary     0.330     5 0.000996 Preprocessor1_Model3
-4    11 mn_log_loss binary     0.383     5 0.00280  Preprocessor1_Model4</code></pre>
+1     5 mn_log_loss binary     0.324     5 0.00103  Preprocessor1_Model1
+2     9 mn_log_loss binary     0.337     5 0.000943 Preprocessor1_Model2
+3     6 mn_log_loss binary     0.326     5 0.00103  Preprocessor1_Model3
+4     3 mn_log_loss binary     0.323     5 0.000947 Preprocessor1_Model4
+5    12 mn_log_loss binary     0.354     5 0.000728 Preprocessor1_Model5</code></pre>
 </div>
 </div>
 <p><strong>Test Measure</strong></p>
 <p>We’ll use our value for <code>mtry</code> that led to the lowest <code>mn_log_loss</code> value. We’ll use this to finalize our workflow.</p>
 <p>With this finalized workflow, we’ll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.</p>
-<p>Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at <code>0.323</code>.</p>
+<p>Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at <code>0.324</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>rf_best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(rf_fit, <span class="at">metric =</span> <span class="st">"mn_log_loss"</span>)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -446,7 +447,7 @@ Computational engine: rpart </code></pre>
 <pre><code># A tibble: 1 × 4
   .metric     .estimator .estimate .config             
   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-1 mn_log_loss binary         0.327 Preprocessor1_Model1</code></pre>
+1 mn_log_loss binary         0.325 Preprocessor1_Model1</code></pre>
 </div>
 </div>
 </section>
@@ -460,8 +461,8 @@ Computational engine: rpart </code></pre>
 <pre><code># A tibble: 2 × 4
   .metric     .estimator .estimate .config             
   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-1 mn_log_loss binary         0.358 Preprocessor1_Model1
-2 mn_log_loss binary         0.327 Preprocessor1_Model1</code></pre>
+1 mn_log_loss binary         0.359 Preprocessor1_Model1
+2 mn_log_loss binary         0.325 Preprocessor1_Model1</code></pre>
 </div>
 </div>
 </section>

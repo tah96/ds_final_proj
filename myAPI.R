@@ -36,17 +36,17 @@ names(defaults) <- c(cat_cols,"BMI")
 ## Model
 
 set.seed(123)
-
-data <- data[1:100,]
 #data_split <- initial_split(data,prop=0.70)
 #data_train <- training(data_split)
 #data_test <- testing(data_split)
 #data_folds <- vfold_cv(data_train,5)
 
-recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smoker + Stroke + HvyAlcoholConsump
+recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smoker + Stroke + HvyAlcoholConsump + DiffWalk + HeartDiseaseorAttack
                        , data = data) |>
   step_normalize(BMI) |>
   step_dummy(GenHlth)
+
+## Using our optimal parameter from our modeling file.
 
 rf_model <- rand_forest(mtry = 4) |>
   set_engine("ranger", importance = "impurity") |>
@@ -72,13 +72,13 @@ rf_fit <- rf_wfl |>
 
 ## Below could be final model
 
-rf_fit |>
-  predict(data.frame(BMI=defaults$BMI,HighBP=1,HighChol=1,Smoker=0,Stroke=0,HvyAlcoholConsump=1,GenHlth=as.character(defaults$GenHlth),Sex=1))
+#rf_fit |>
+#  predict(data.frame(BMI=defaults$BMI,HighBP=1,HighChol=1,Smoker=0,Stroke=0,HvyAlcoholConsump=1,GenHlth=as.character(defaults$GenHlth),Sex=1))
 
-matrix <- conf_mat(data |> 
-                    mutate(estimate = rf_fit |> predict(data) |> pull()), #data
-                   Diabetes_binary, #truth
-                   estimate)
+#matrix <- conf_mat(data |> 
+#                    mutate(estimate = rf_fit |> predict(data) |> pull()), #data
+#                   Diabetes_binary, #truth
+#                   estimate)
 
 #* Find out if a subject is classified as diabetic based on our model parameters
 #* @param BMI Body Mass Index
@@ -89,8 +89,12 @@ matrix <- conf_mat(data |>
 #* @param HvyAlcoholConsump Heavy Alcohol Consumption flag
 #* @param GenHlth General Health Category
 #* @param Sex Sex flag
+#* @param DiffWalk Diff Walk flag
+#* @param HeartDiseaseorAttack Heart disease or attack flag
 #* @get /pred
-function(BMI=defaults$BMI,HighBP=defaults$HighBP,HighChol=defaults$HighChol,Smoker=defaults$Smoker,Stroke=defaults$Stroke,HvyAlcoholConsump=defaults$HvyAlcoholConsump,GenHlth=as.character(defaults$GenHlth),Sex=defaults$Sex){
+function(BMI=defaults$BMI,HighBP=defaults$HighBP,HighChol=defaults$HighChol,Smoker=defaults$Smoker,Stroke=defaults$Stroke,
+         HvyAlcoholConsump=defaults$HvyAlcoholConsump,GenHlth=as.character(defaults$GenHlth),Sex=defaults$Sex,
+         DiffWalk=defaults$DiffWalk,HeartDiseaseorAttack=defaults$HeartDiseaseorAttack){
   df <- data.frame(BMI=as.double(BMI),
              HighBP=as.numeric(HighBP),
              HighChol=as.numeric(HighChol),
@@ -98,7 +102,9 @@ function(BMI=defaults$BMI,HighBP=defaults$HighBP,HighChol=defaults$HighChol,Smok
              Stroke=as.numeric(Stroke),
              HvyAlcoholConsump=as.numeric(HvyAlcoholConsump),
              GenHlth=GenHlth,
-             Sex=as.numeric(Sex)
+             Sex=as.numeric(Sex),
+             DiffWalk = as.numeric(DiffWalk),
+             HeartDiseaseorAttack = as.numeric(HeartDiseaseorAttack)
   )
   prediction <- rf_fit |>
     predict(df)

@@ -49,7 +49,7 @@ We want to split our data into a 70% training and 30% test set. For fitting our 
 
 We'll set a seed as well to make sure our results, and comments about those results, are reproducible.
 
-The below output is of our split showing \~178k records ino ur training set and \~76k records in our test set.
+The below output is of our split showing \~178k records into our training set and \~76k records in our test set.
 
 ```{r}
 set.seed(123)
@@ -75,12 +75,12 @@ The tree starts with a node and uses log-loss to determine a split (branches). A
 
 **Recipe**
 
-First we'll construct our recipe. For this we'll concentrate on the variables `BMI`,`HighBP`,`HighChol`,`GenHlth`,`Sex`,`Smoker`,`Stroke`,`HvyAlcoholConsump`.
+First we'll construct our recipe. For this we'll concentrate on the variables `BMI`,`HighBP`,`HighChol`,`GenHlth`,`Sex`,`Smoker`,`Stroke`,`HvyAlcoholConsump`,`DiffWalk`,`HeartDiseaseorAttack`.
 
-We'll normalize our one numeric variables `BMI`. We'll also add dummy variables for our one factor variable with multiple levels `GenHlth`. There is no need to update anything to an ID type because that does not exist in the data set.
+We'll normalize our one numeric variable `BMI`. We'll also add dummy variables for our one factor variable with multiple levels `GenHlth`. There is no need to update anything to an ID type because that does not exist in the data set.
 
 ```{r}
-class_recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smoker + Stroke + HvyAlcoholConsump
+class_recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smoker + Stroke + HvyAlcoholConsump + DiffWalk + HeartDiseaseorAttack
                          , data = data_train) |>
   step_normalize(BMI) |>
   step_dummy(GenHlth)
@@ -128,7 +128,7 @@ We'll use our the value for `cost_complexity` that led to the lowest `mn_log_los
 
 With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
 
-Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.355`.
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.356`.
 
 ```{r}
 class_best_params <- select_best(class_fits, metric = "mn_log_loss")
@@ -189,7 +189,7 @@ We'll use our value for `mtry` that led to the lowest `mn_log_loss` value. We'll
 
 With this finalized workflow, we'll fit the data on our entire training set and evaluate against the test set keeping log-loss our our metric.
 
-Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.323`.
+Below you can see the metrics of our model against the test set. This will come in handy later when selecting our model. We see here our log-loss is estimated at `0.324`.
 
 ```{r}
 rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
