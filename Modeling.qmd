@@ -71,7 +71,7 @@ This section will hold both models considered: A Classification Tree and a Rando
 
 A classification tree is a tree-based model aimed at placing subjects (classifying) into a single category (outcome) based on what we know about them (inputs).
 
-The tree starts with a node and uses log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler. 
+The tree starts with a node and uses log-loss to determine a split (branches). After that split it goes to each child leaf node and repeats the process as many times as necessary or as many times as declared by the modeler.
 
 **Recipe**
 
