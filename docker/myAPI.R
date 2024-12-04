@@ -45,7 +45,7 @@ recipe <- recipe(Diabetes_binary ~ BMI + HighBP + HighChol + GenHlth + Sex + Smo
 
 ## Using our optimal parameter from our modeling file.
 
-rf_model <- rand_forest(mtry = 5) |>
+rf_model <- rand_forest(mtry = 3) |>
   set_engine("ranger", importance = "impurity") |>
   set_mode("classification")
 
