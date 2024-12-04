@@ -1,7 +1,6 @@
 library(tidyverse)
 library(tidymodels)
 library(ranger)
-library(ggplot2)
 
 ## Read in data
 
@@ -98,13 +97,13 @@ function(BMI=defaults$BMI,HighBP=defaults$HighBP,HighChol=defaults$HighChol,Smok
 ## User may have to enter in appropriate port numbers
 
 ## Default values API call
-#http://.0.0.0:8000/pred?BMI=28.3824&HighBP=0&HighChol=0&Smoker=0&Stroke=0&HvyAlcoholConsump=0&GenHlth=Very%20Good&Sex=0&DiffWalk=0&HeartDiseaseorAttack=0
+#http://127.0.0.1:3838/pred?BMI=28.3824&HighBP=0&HighChol=0&Smoker=0&Stroke=0&HvyAlcoholConsump=0&GenHlth=Very%20Good&Sex=0&DiffWalk=0&HeartDiseaseorAttack=0
 
 ## High BMI with High Blood Pressure and Cholesterol
-#http://0.0.0.0:8000/pred?BMI=31&HighBP=1&HighChol=1&Smoker=0&Stroke=0&HvyAlcoholConsump=0&GenHlth=Very%20Good&Sex=0&DiffWalk=0&HeartDiseaseorAttack=0
+#http://127.0.0.1:3838/pred?BMI=31&HighBP=1&HighChol=1&Smoker=0&Stroke=0&HvyAlcoholConsump=0&GenHlth=Very%20Good&Sex=0&DiffWalk=0&HeartDiseaseorAttack=0
 
 ## High BMI with High Blood Pressure and Cholesterol in poor health and documented health issues
-#http://0.0.0.0:8000/pred?BMI=37&HighBP=1&HighChol=1&Smoker=1&Stroke=1&HvyAlcoholConsump=0&GenHlth=Poor&Sex=1&DiffWalk=1&HeartDiseaseorAttack=1
+#http://127.0.0.1:3838/pred?BMI=37&HighBP=1&HighChol=1&Smoker=1&Stroke=1&HvyAlcoholConsump=0&GenHlth=Poor&Sex=1&DiffWalk=1&HeartDiseaseorAttack=1
 
 
 #* Retrieve information about the author and github pages
